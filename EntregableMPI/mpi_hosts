@@ -1,0 +1,3 @@
+kaguya@manager max_slots=4
+mpiuser@worker1 max_slots=2
+mpiuser@worker2 max_slots=4
