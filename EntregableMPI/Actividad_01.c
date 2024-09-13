@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+/**
+ * @brief Informacion del proceso, incluye numero de procesos, id del proceso actual,
+ * y el nombre del proceso.
+ */
 typedef struct mpi_worker_info
 {
 	int np;
@@ -13,6 +17,11 @@ typedef struct mpi_worker_info
 	int proc_name_size;
 } mpi_worker_info;
 
+/**
+ * @brief Funcion para imprimir un arreglo.
+ * @param *array Puntero al arreglo.
+ * @param size Longitud del arreglo.
+ */
 void print_array(float *array, size_t size)
 {
 	printf("[ ");
@@ -36,8 +45,6 @@ int main(int argc, char *argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, &process_info.id);
 	MPI_Comm_size(MPI_COMM_WORLD, &process_info.np);
 	MPI_Get_processor_name(process_info.proc_name, &process_info.proc_name_size);
-
-	// printf("[GLOBAL]> Worker %d in processor %s is up!\n", process_info.id, process_info.processor_name);
 
 	array = malloc(arr_size * sizeof(float));
 	if (array == NULL)
