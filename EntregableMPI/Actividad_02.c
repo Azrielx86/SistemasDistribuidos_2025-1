@@ -24,6 +24,14 @@ void print_array(float *array, size_t size)
 	printf(" %.2f ]\n", (double) array[size - 1]);
 }
 
+void print_array(int *array, size_t size)
+{
+	printf("[ ");
+	for (size_t i = 0; i < size - 1; i++)
+		printf(" %d ",  array[i]);
+	printf(" %d ]\n",  array[size - 1]);
+}
+
 void printWorkerInfo(const mpi_worker_info *process_info, MPI_Status *status ){
     printf("==> Master processor %d is %s\n", process_info->id, process_info->proc_name);
 		for (int i = 1; i < process_info->np; i++)
