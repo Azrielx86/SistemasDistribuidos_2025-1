@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 		for (unsigned int lap = 0; lap < laps; lap++)
 		{
 			printf("==> Starting lap %d\n", lap + 1);
-			MPI_Send(array, (int) arr_size, MPI_FLOAT, 1, 1, MPI_COMM_WORLD);
 			for (size_t i = 0; i < arr_size; i++)
 				array[i] += 1.0f;
+			MPI_Send(array, (int) arr_size, MPI_FLOAT, 1, 1, MPI_COMM_WORLD);
 			MPI_Recv(array, (int) arr_size, MPI_FLOAT, process_info.np - 1, 0, MPI_COMM_WORLD, &status);
 		}
 
