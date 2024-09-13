@@ -46,7 +46,7 @@ void printWorkerInfo(const mpi_worker_info *process_info, MPI_Status *status ){
 }
 
 float calculaProductoPunto(const float *v1, const float *v2, const int vec_size){
-    float result;
+    float result = 0;
     for(int i = 0;  i< vec_size; i++){
         result += v1[i] * v2[i];
     }
@@ -123,9 +123,9 @@ int main(int argc, char *argv[])
         int startingIndex = 0;
         //Manda los pedazos del vector
         for (int nProcess = 1; nProcess < process_info.np; nProcess++){
-            startingIndex = (nProcess - 1) * distribucionelementos[nProcess-1];
             MPI_Send(&vec1[startingIndex], distribucionelementos[nProcess-1], MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
             MPI_Send(&vec2[startingIndex], distribucionelementos[nProcess-1], MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
+            startingIndex += distribucionelementos[nProcess-1];
         }
 
         for (int nProcess = 1; nProcess < process_info.np; nProcess++){
@@ -142,6 +142,7 @@ int main(int argc, char *argv[])
 	else
 	{
 		MPI_Send(process_info.proc_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, process_info.id, MPI_COMM_WORLD);
+
         int vec_size_local = distribucionelementos[process_info.id - 1];
         vec1 = malloc(vec_size_local * sizeof(float));
         vec2 = malloc(vec_size_local * sizeof(float));
@@ -156,6 +157,7 @@ int main(int argc, char *argv[])
         MPI_Recv(vec2, vec_size_local, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
 
         resultado = calculaProductoPunto(vec1, vec2, vec_size_local);
+
 
         MPI_Send(&resultado, 1, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD);
 
