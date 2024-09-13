@@ -71,6 +71,19 @@ int main(int argc, char *argv[])
     int elementosPorNodo = vec_size / (process_info.np - 1);
     int elementosNoAsignados = vec_size % (process_info.np - 1);
 	
+    int *distribucionelementos = NULL;
+
+    distribucionelementos = malloc((process_info.np - 1) * sizeof(int));
+
+    for(int i = 0; i < process_info.np - 1; i++){
+        distribucionelementos[i] = elementosPorNodo;
+    }
+
+    if(elementosNoAsignados != 0){
+        for(int i = 0; i< elementosNoAsignados; i++){
+            distribucionelementos[i] += 1;
+        }
+    }
 
 	if (process_info.id == 0)
 	{
@@ -94,8 +107,8 @@ int main(int argc, char *argv[])
 		print_array(vec1, vec_size);
         printf("\n\n=====\t\t VECTOR2 \t\t =====\n\n");
 		print_array(vec2, vec_size);
-
-        //TODO código para enviar el los vectores, 
+        printf("\n\n=====\t\t Distribución elementos \t\t =====\n\n");
+		print_array(distribucionelementos, process_info.np - 1);
         
         //dividir los vectores entre los otros procesos que no sean el master
 
@@ -142,6 +155,7 @@ int main(int argc, char *argv[])
 
 	free(vec1);
     free(vec2);
+    free(distribucionelementos);
 	MPI_Finalize();
 	return 0;
 }
