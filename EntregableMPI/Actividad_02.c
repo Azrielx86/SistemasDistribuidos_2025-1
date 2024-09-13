@@ -120,11 +120,12 @@ int main(int argc, char *argv[])
         
         //dividir los vectores entre los otros procesos que no sean el master
 
-
+        int startingIndex = 0;
         //Manda los pedazos del vector
         for (int nProcess = 1; nProcess < process_info.np; nProcess++){
-            MPI_Send(vec1, elementosPorNodo, MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
-            MPI_Send(vec2, elementosPorNodo, MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
+            startingIndex = (nProcess - 1) * distribucionelementos[nProcess-1];
+            MPI_Send(&vec1[startingIndex], distribucionelementos[nProcess-1], MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
+            MPI_Send(&vec2[startingIndex], distribucionelementos[nProcess-1], MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
         }
 
         for (int nProcess = 1; nProcess < process_info.np; nProcess++){
@@ -141,9 +142,9 @@ int main(int argc, char *argv[])
 	else
 	{
 		MPI_Send(process_info.proc_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, process_info.id, MPI_COMM_WORLD);
-
-        vec1 = malloc(elementosPorNodo * sizeof(float));
-        vec2 = malloc(elementosPorNodo * sizeof(float));
+        int vec_size_local = distribucionelementos[process_info.id - 1]
+        vec1 = malloc(vec_size_local * sizeof(float));
+        vec2 = malloc(vec_size_local * sizeof(float));
 
         if (vec1 == NULL || vec2 == NULL)
         {
@@ -151,10 +152,10 @@ int main(int argc, char *argv[])
             return errno;
         }
 
-        MPI_Recv(vec1, elementosPorNodo, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
-        MPI_Recv(vec2, elementosPorNodo, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
+        MPI_Recv(vec1, vec_size_local, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
+        MPI_Recv(vec2, vec_size_local, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
 
-        resultado = calculaProductoPunto(vec1, vec2, elementosPorNodo);
+        resultado = calculaProductoPunto(vec1, vec2, vec_size_local);
 
         MPI_Send(&resultado, 1, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD);
 
