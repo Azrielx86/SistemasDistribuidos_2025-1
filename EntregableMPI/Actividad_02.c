@@ -24,7 +24,7 @@ void print_array(float *array, size_t size)
 	printf(" %.2f ]\n", (double) array[size - 1]);
 }
 
-void print_array(int *array, size_t size)
+void print_array2(int *array, size_t size)
 {
 	printf("[ ");
 	for (size_t i = 0; i < size - 1; i++)
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
         printf("\n\n=====\t\t VECTOR2 \t\t =====\n\n");
 		print_array(vec2, vec_size);
         printf("\n\n=====\t\t Distribución elementos \t\t =====\n\n");
-		print_array(distribucionelementos, process_info.np - 1);
+		print_array2(distribucionelementos, process_info.np - 1);
         
         //dividir los vectores entre los otros procesos que no sean el master
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 	else
 	{
 		MPI_Send(process_info.proc_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, process_info.id, MPI_COMM_WORLD);
-        int vec_size_local = distribucionelementos[process_info.id - 1]
+        int vec_size_local = distribucionelementos[process_info.id - 1];
         vec1 = malloc(vec_size_local * sizeof(float));
         vec2 = malloc(vec_size_local * sizeof(float));
 
