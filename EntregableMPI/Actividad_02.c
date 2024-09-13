@@ -69,16 +69,18 @@ int main(int argc, char *argv[])
     //IDEA: crear arreglo de tamaño np - 1 que indique la cantidad de elementos a enviar al nodo
     int elementosPorNodo = vec_size / (process_info.np - 1);
     int elementosNoAsignados = vec_size % (process_info.np - 1);
-	if (vec1 == NULL || vec2 == NULL)
-	{
-		perror("Cannot create vectors!");
-		return errno;
-	}
+	
 
 	if (process_info.id == 0)
 	{
         vec1 = malloc(vec_size * sizeof(float));
         vec2 = malloc(vec_size * sizeof(float));
+
+        if (vec1 == NULL || vec2 == NULL)
+	    {
+            perror("Cannot create vectors!");
+            return errno;
+	    }
 		printWorkerInfo(&process_info, &status);
 
 		for (size_t i = 0; i < vec_size; i++){
@@ -103,7 +105,7 @@ int main(int argc, char *argv[])
             MPI_Send(vec2, elementosPorNodo, MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD);
         }
 
-        for (int nProcess = 1; nProcess < np; nProcess++){
+        for (int nProcess = 1; nProcess < process_info.np; nProcess++){
             float tmp;
             MPI_Recv(&tmp, 1, MPI_FLOAT, nProcess, nProcess, MPI_COMM_WORLD, &status);
 
@@ -130,12 +132,18 @@ int main(int argc, char *argv[])
         vec1 = malloc(elementosPorNodo * sizeof(float));
         vec2 = malloc(elementosPorNodo * sizeof(float));
 
+        if (vec1 == NULL || vec2 == NULL)
+        {
+            perror("Cannot create vectors!");
+            return errno;
+        }
+
         MPI_Recv(vec1, elementosPorNodo, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
         MPI_Recv(vec2, elementosPorNodo, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
 
         resultado = 1.0;
 
-        MPI_Send(&resultado, 1, MPI_FLOAT, 0, nProcess, MPI_COMM_WORLD);
+        MPI_Send(&resultado, 1, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD);
 
 //		for (unsigned int lap = 0; lap < laps; lap++)
 // 		{
