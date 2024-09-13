@@ -37,13 +37,14 @@ void printWorkerInfo(const mpi_worker_info *process_info, MPI_Status *status ){
 		}
 }
 
-// float calculaProductoPunto(const float *v1, const float *v2, const int vec_size){
-//     float result;
-//     for(int i = 0;  i< vec_size; i++){
-//         result += v1[i] * v2[i];
-//     }
+float calculaProductoPunto(const float *v1, const float *v2, const int vec_size){
+    float result;
+    for(int i = 0;  i< vec_size; i++){
+        result += v1[i] * v2[i];
+    }
 
-// }
+    return result;
+}
 
 int main(int argc, char *argv[])
 {
@@ -112,16 +113,7 @@ int main(int argc, char *argv[])
             resultado += tmp;
         }
 
-        printf("El producto punto de los vectores es %0.2f", resultado);
-
-		//for (unsigned int lap = 0; lap < laps; lap++)
-		// {
-		// 	printf("==> Starting lap %d\n", lap + 1);
-		// 	MPI_Send(array, (int) arr_size, MPI_FLOAT, 1, 1, MPI_COMM_WORLD);
-		// 	for (size_t i = 0; i < arr_size; i++)
-		// 		array[i] += 1.0f;
-		// 	MPI_Recv(array, (int) arr_size, MPI_FLOAT, process_info.np - 1, 0, MPI_COMM_WORLD, &status);
-		// }
+        printf("El producto punto de los vectores es %0.2f\n", resultado);
 
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
@@ -141,22 +133,10 @@ int main(int argc, char *argv[])
         MPI_Recv(vec1, elementosPorNodo, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
         MPI_Recv(vec2, elementosPorNodo, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD, &status);
 
-        resultado = 1.0;
+        resultado = calculaProductoPunto(vec1, vec2, elementosPorNodo);
 
         MPI_Send(&resultado, 1, MPI_FLOAT, 0, process_info.id, MPI_COMM_WORLD);
 
-//		for (unsigned int lap = 0; lap < laps; lap++)
-// 		{
-// 			MPI_Recv(array, (int) arr_size, MPI_FLOAT, process_info.id - 1, process_info.id, MPI_COMM_WORLD, &status);
-
-// 			for (size_t i = 0; i < arr_size; i++)
-// 				array[i] += 1.0f;
-// #ifdef DEBUG
-// 			printf("[%s][%2d][lap (%d/%d)] Array modified: ", process_info.proc_name, process_info.id, lap + 1, laps);
-// 			print_array(array, arr_size);
-// #endif /* ifdef DEBUG */
-// 			MPI_Send(array, (int) arr_size, MPI_FLOAT, process_info.id == process_info.np - 1 ? 0 : process_info.id + 1, process_info.id == process_info.np - 1 ? 0 : process_info.id + 1, MPI_COMM_WORLD);
-// 		}
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
