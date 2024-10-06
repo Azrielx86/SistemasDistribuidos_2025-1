@@ -1,0 +1,12 @@
+[
+  {
+    "host": "192.168.56.101",
+    "user": "kotori",
+    "mode": "client"
+  },
+  {
+    "host": "192.168.56.102",
+    "user": "yuzuru",
+    "mode": "client"
+  }
+]
