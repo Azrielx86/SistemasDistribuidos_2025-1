@@ -11,8 +11,10 @@ def local_time(counter: int) -> str:
     return f'(LAMPORT_TIME={counter}, LOCAL_TIME={datetime.now()})'
 
 
-def calc_recv_timestamp(pid: int, recv_time_stamp: int, counter: list[int]) -> list[int]:
-    counter[pid] = max(recv_time_stamp, counter[pid]) + 1
+def calc_recv_timestamp(pid: int, recv_time_stamp: list[int], counter: list[int]) -> list[int]:
+    counter[pid] = max(recv_time_stamp[pid], counter[pid]) + 1
+    for i in range(len(counter)):
+        counter[i] = max(recv_time_stamp[i], counter[i])
     return counter
 
 
@@ -31,8 +33,7 @@ def send_message(pipe: Connection, pid: int, counter: list[int]) -> list[int]:
 
 def recv_message(pipe: Connection, pid: int, sender_pid: int, counter: list[int]) -> list[int]:
     message, timestamp = tuple[str, list[int]](pipe.recv())
-    counter = calc_recv_timestamp(pid, timestamp[pid], counter)
-    counter[sender_pid] += 1
+    counter = calc_recv_timestamp(pid, timestamp, counter)
     print(f"Message sent to {str(pid)}{local_time(counter[pid])}")
     return counter
 
