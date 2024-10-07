@@ -66,6 +66,7 @@ def node(pid: int, pipe: tuple[Connection, Connection]) -> None:
 
 
 if __name__ == '__main__':
+    print("[ Algoritmo de Berkeley ]".center(80, "="))
     nump = 4
 
     pipes: list[tuple[Connection, Connection]] = [Pipe() for _ in range(nump)]
