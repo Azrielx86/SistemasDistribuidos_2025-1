@@ -1,0 +1,7 @@
+registro_escolar.h
+*.o
+*_clnt.*
+*_svc.*
+*_xdr.*
+registro_escolar_client
+registro_escolar_server
