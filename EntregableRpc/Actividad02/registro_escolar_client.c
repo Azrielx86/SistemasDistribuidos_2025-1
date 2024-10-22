@@ -6,9 +6,6 @@
 
 void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *busqueda_arg)
 {
-	alumno *result_2;
-	bool_t *result_3;
-	bool_t *result_4;
 
 	CLIENT *clnt = clnt_create(host, REGISTROALUMNOS, REGISTROALUMNOS_V1, "udp");
 	if (clnt == NULL)
@@ -19,42 +16,54 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 
 	if (strcmp(action, "post") == 0)
 	{
-		const bool_t *result_1 = registrar_alumno_1(alumno_arg, clnt);
+		const int *result_1 = registrar_alumno_1(alumno_arg, clnt);
 		if (result_1 == (bool_t *) NULL)
 		{
-			clnt_perror(clnt, "call failed");
-		}
-
-		if (result_1 == NULL)
-		{
-			fprintf(stderr, "Error [get] with parameters: %i", alumno_arg->id);
+			clnt_perror(clnt, "Error [post] cannot register student\n");
 			return;
 		}
+
+		printf("Student registered with id = %d\n", *result_1);
 	}
 	else if (strcmp(action, "get") == 0)
 	{
-		result_2 = buscar_alumno_1(busqueda_arg, clnt);
+		const alumno *result_2 = buscar_alumno_1(busqueda_arg, clnt);
 		if (result_2 == (alumno *) NULL)
 		{
-			clnt_perror(clnt, "call failed");
+			printf("Cannot find any student.\n");
+			return;
 		}
+
+		printf("==> Student found with id %d\n", result_2->id);
+		printf("\tName: %s %s\n", result_2->nombre, result_2->apellido);
+		printf("\tAge: %d\n", result_2->edad);
+		printf("\tCourse: %s\n", result_2->curso);
 	}
 	else if (strcmp(action, "put") == 0)
 	{
-		result_3 = actualizar_alumno_1(alumno_arg, clnt);
+		const bool_t *result_3 = actualizar_alumno_1(alumno_arg, clnt);
 		if (result_3 == (bool_t *) NULL)
 		{
 			clnt_perror(clnt, "call failed");
+			return;
 		}
 	}
 	else if (strcmp(action, "delete") == 0)
 	{
-
-		result_4 = eliminar_alumno_1(&alumno_arg->id, clnt);
+		const bool_t *result_4 = eliminar_alumno_1(&alumno_arg->id, clnt);
 		if (result_4 == (bool_t *) NULL)
 		{
 			clnt_perror(clnt, "call failed");
+			return;
 		}
+		
+		if (*result_4 == FALSE)
+		{
+			printf("Cannot delete student, not found.\n");
+			return;
+		}
+
+		printf("Student deleted.\n");
 	}
 	else
 	{
@@ -71,7 +80,17 @@ int main(int argc, char *argv[])
 	char *action;
 	alumno alumno_arg;
 	busqueda busqueda_arg;
-	char *course;
+
+	alumno_arg.nombre = "";
+	alumno_arg.apellido = "";
+	alumno_arg.curso = "";
+	alumno_arg.edad = -1;
+	alumno_arg.id = -1;
+
+	busqueda_arg.nombre = "";
+	busqueda_arg.apellido = "";
+	busqueda_arg.curso = "";
+	busqueda_arg.id = -1;
 
 	if (argc < 3)
 	{
