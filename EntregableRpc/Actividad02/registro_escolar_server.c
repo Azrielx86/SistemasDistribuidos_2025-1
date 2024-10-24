@@ -1,6 +1,10 @@
 // ReSharper disable CppParameterNeverUsed
 #include "registro_escolar.h"
+#include "rpc/types.h"
 #include <sqlite3.h>
+#include <stdio.h>
+#include <string.h>
+#define DB_FILE "alumnos.db"
 
 /**
  * Registra un alumno en el sistema.
@@ -26,7 +30,7 @@ int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 
 	const char *buffer = NULL;
 
-	sqlite3_open("alumnos.db", &db);
+	sqlite3_open(DB_FILE, &db);
 	buffer = sqlite3_mprintf("INSERT INTO alumnos(nombre, apellido, edad, curso) VALUES('%s', '%s', %d, '%s');", argp->nombre, argp->apellido, argp->edad, argp->curso);
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 	sqlite3_step(stmt);
@@ -58,7 +62,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
 
-	sqlite3_open("alumnos.db", &db);
+	sqlite3_open(DB_FILE, &db);
 
 	if (strlen(argp->nombre) > 0)
 		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE nombre='%q'", argp->nombre);
@@ -92,15 +96,78 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 	return &result;
 }
 
-bool_t *
-actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
+/**
+ * Función para actualizar el alumno. Para actualizar el alumno, es necesario dar el ID
+ * en el parámtro de entrada, y todos los valores que no sean cadenas vacías o -1, se
+ * actualizarán en la base de datos.
+ * @param argp Datos del alumno
+ * @param rqstp Request del server
+ * @return TRUE si hubo cambios, FALSE en caso contrario
+ */
+bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 {
 	static bool_t result;
+	sqlite3 *db;
+	sqlite3_stmt *stmt;
+	const char *buffer = NULL;
+	char *columns = calloc(1024, sizeof(char) * 1024);
+	char *values = calloc(1024, sizeof(char) * 1024);
+	char temp[256];
 
-	/*
-	 * insert server code here
-	 */
+	sqlite3_open(DB_FILE, &db);
+	buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE id = %d", argp->id);
+	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 
+	if (sqlite3_step(stmt) == SQLITE_DONE)
+	{
+		printf("No students found with id %d\n", argp->id);
+		fflush(stdout);
+		result = FALSE;
+		return &result;
+	}
+
+	if (strlen(argp->nombre) > 0)
+	{
+		strcat(columns, "nombre,");
+		snprintf(temp, 256, "'%s',", argp->nombre);
+		strcat(values, temp);
+	}
+
+	if (strlen(argp->apellido) > 0)
+	{
+		strcat(columns, "apellido,");
+		snprintf(temp, 256, "'%s',", argp->apellido);
+		strcat(values, temp);
+	}
+
+	if (strlen(argp->curso) > 0)
+	{
+		strcat(columns, "curso,");
+		snprintf(temp, 256, "'%s',", argp->curso);
+		strcat(values, temp);
+	}
+
+	if (argp->edad > 0)
+	{
+		strcat(columns, "nombre,");
+		snprintf(temp, 256, "%d,", argp->edad);
+		strcat(values, temp);
+	}
+
+	// Eliminar la última coma
+	columns[strlen(columns) - 1] = '\0';
+	values[strlen(values) - 1] = '\0';
+
+	// construir el query con los campos necesarios
+	buffer = sqlite3_mprintf("UPDATE alumnos SET (%s) = (%s) WHERE id=%d", columns, values, argp->id);
+	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
+	sqlite3_step(stmt);
+
+	result = TRUE;
+	printf("Student with id = %d updated. Columns changed: %s\n", argp->id, columns);
+
+	free(columns);
+	free(values);
 	return &result;
 }
 
@@ -118,7 +185,7 @@ bool_t *eliminar_alumno_1_svc(int *argp, struct svc_req *rqstp)
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
 
-	sqlite3_open("alumnos.db", &db);
+	sqlite3_open(DB_FILE, &db);
 	buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE id = %d", *argp);
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 
