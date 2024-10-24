@@ -58,9 +58,12 @@ int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 {
 	static alumno result;
+	memset(&result, 0, sizeof(alumno));
 	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
+
+	result.id = -1;
 
 	sqlite3_open(DB_FILE, &db);
 
@@ -87,6 +90,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 		result.curso = (char *) sqlite3_column_text(stmt, 4);
 
 		printf("Alumno encontrado con id=%d", result.id);
+		fflush(stdout);
 		return &result;
 	}
 
@@ -107,6 +111,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 {
 	static bool_t result;
+	memset(&result, 0, sizeof(bool_t));
 	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
@@ -165,6 +170,7 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 
 	result = TRUE;
 	printf("Student with id = %d updated. Columns changed: %s\n", argp->id, columns);
+	fflush(stdout);
 
 	free(columns);
 	free(values);
