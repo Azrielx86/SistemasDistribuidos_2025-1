@@ -23,7 +23,7 @@ OBJECTS_SVC = $(SOURCES_SVC.c:%.c=%.o) $(TARGETS_SVC.c:%.c=%.o)
 # Compiler flags 
 
 INCLUDES += -I/usr/include/tirpc
-CFLAGS += -g $(INCLUDES)
+CFLAGS += -gfull -O0 $(INCLUDES)
 LDLIBS += -lnsl -ltirpc -lsqlite3
 RPCGENFLAGS = 
 
