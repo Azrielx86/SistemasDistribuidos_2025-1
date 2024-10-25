@@ -28,7 +28,7 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 	else if (strcmp(action, "get") == 0)
 	{
 		const alumno *result_2 = buscar_alumno_1(busqueda_arg, clnt);
-		if (result_2 == (alumno *) NULL)
+		if (result_2 == (alumno *) NULL || result_2->id == -1)
 		{
 			printf("Cannot find any student.\n");
 			return;
@@ -76,8 +76,6 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 int main(int argc, char *argv[])
 {
 	int opt;
-	char *host;
-	char *action;
 	alumno alumno_arg;
 	busqueda busqueda_arg;
 
@@ -98,12 +96,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	host = argv[1];
-	action = argv[2];
+	char *host = argv[1];
+	char *action = argv[2];
 
 	while ((opt = getopt(argc, argv, "n:a:e:i:c:")) != -1)
 	{
-		int arglen = strlen(optarg);
 		switch (opt)
 		{
 		case 'n':

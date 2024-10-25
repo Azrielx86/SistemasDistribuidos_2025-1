@@ -66,7 +66,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE apellido='%q'", argp->apellido);
 	else if (strlen(argp->curso) > 0)
 		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE curso='%q'", argp->curso);
-
+	
 	// Solo buscará por el primer resultado que haga match.
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 	while (sqlite3_step(stmt) != SQLITE_DONE)
@@ -74,7 +74,14 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 		const int num_cols = sqlite3_column_count(stmt);
 
 		if (num_cols != 5)
+		{
+			result.id = -1;
+			result.nombre = "";
+			result.apellido = "";
+			result.curso = "";
+			result.edad = -1;
 			return &result;
+		}
 
 		result.id = sqlite3_column_int(stmt, 0);
 		result.nombre = (char *) sqlite3_column_text(stmt, 1);
