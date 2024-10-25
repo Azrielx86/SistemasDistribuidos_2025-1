@@ -16,7 +16,7 @@
  */
 int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 {
-	static bool_t result = {0};
+	static bool_t result = {0}; // Siempre hay que reiniciar el resultado global.
 
 	if (strlen(argp->nombre) < 0 || strlen(argp->apellido) < 0 || strlen(argp->curso) < 0 || argp->edad < 0)
 	{
@@ -26,25 +26,27 @@ int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 		return &result;
 	}
 
-	sqlite3 *db;
-	sqlite3_stmt *stmt;
+	sqlite3 *db;               // Archivo de la base de datos.
+	sqlite3_stmt *stmt;        // Para almacenar los resultados de las query a la base de datos.
+	const char *buffer = NULL; // Buffer para construir las querys.
 
-	const char *buffer = NULL;
-
-	sqlite3_open(DB_FILE, &db);
+	sqlite3_open(DB_FILE, &db); // Apertura del archivvo de base de datos
+	// Para construir la query se utiliza sqlite3_mprintf, similar a snprintf.
 	buffer = sqlite3_mprintf("INSERT INTO alumnos(nombre, apellido, edad, curso) VALUES('%s', '%s', %d, '%s');", argp->nombre, argp->apellido, argp->edad, argp->curso);
-	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
-	sqlite3_step(stmt);
+	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL); // Preparación de la query
+	sqlite3_step(stmt);                              // Ejecución de la query
 
+	// Para mostrar qué id se insertó, se ejecuta esta query que recupera dicho ID.
 	sqlite3_prepare_v2(db, "SELECT last_insert_rowid()", -1, &stmt, NULL);
 	sqlite3_step(stmt);
 
 	argp->id = sqlite3_column_int(stmt, 0);
 
 	printf("Alumno registrado con id = %d | %s %s (%d) a %s\n", argp->id, argp->nombre, argp->apellido, argp->edad, argp->curso);
+	// Por alguna razón si no se realiza un fflush, no se muestran resultados en la terminal...
 	fflush(stdout);
-	sqlite3_finalize(stmt);
-	sqlite3_close(db);
+	sqlite3_finalize(stmt); // Terminado de los resultados de la query
+	sqlite3_close(db);      // Finalizado de la base de datos
 	result = argp->id;
 	return &result;
 }
@@ -62,6 +64,10 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
 
+	/*
+	 * Es necesario inicializar los valores, incluso si se obtiene un resultado, ya que el no
+	 * inicializarlos puede provocar memory leaks (detectables por ASAN o valgrind).
+	 */
 	result.id = -1;
 	result.nombre = "";
 	result.apellido = "";
@@ -70,6 +76,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 
 	sqlite3_open(DB_FILE, &db);
 
+	// Dependiendo de por qué se quiera buscar, se construye una query distinta.
 	if (strlen(argp->nombre) > 0)
 		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE nombre LIKE '%q'", argp->nombre);
 	else if (strlen(argp->apellido) > 0)
@@ -83,7 +90,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 	{
 		const int num_cols = sqlite3_column_count(stmt);
 
-		if (num_cols != 5)
+		if (num_cols != 5) // Si no coincide con la cantidad de columnas de la tabla
 		{
 			printf("No se encontró ningún alumno\n");
 			fflush(stdout);
@@ -92,21 +99,23 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 			return &result;
 		}
 
+		// Almacenado de los valores que se pueden copiar.
 		result.id = sqlite3_column_int(stmt, 0);
 		result.edad = sqlite3_column_int(stmt, 3);
 
-		/* Para los casos de las cadenas, es necesario reservar memoria en los
+		/*
+		 * Para los casos de las cadenas, es necesario reservar memoria en los
 		 * apuntadores de la estructura alumno, en donde posteriormente se copian
 		 * las cadenas desde stmt, ya que estas se eliminarán al finalizar el stmt.
-		*/
-		const char* first_name = (char *) sqlite3_column_text(stmt, 1);
-		const char* last_name = (char *) sqlite3_column_text(stmt, 2);
-		const char* course = (char *) sqlite3_column_text(stmt, 4);
+		 */
+		const char *first_name = (char *) sqlite3_column_text(stmt, 1);
+		const char *last_name = (char *) sqlite3_column_text(stmt, 2);
+		const char *course = (char *) sqlite3_column_text(stmt, 4);
 
 		result.nombre = malloc(sizeof(char) * strlen(first_name) + 1);
 		result.apellido = malloc(sizeof(char) * strlen(last_name) + 1);
 		result.curso = malloc(sizeof(char) * strlen(course) + 1);
-		
+
 		strcpy(result.nombre, first_name);
 		strcpy(result.apellido, last_name);
 		strcpy(result.curso, course);
@@ -135,6 +144,11 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
+	/*
+	 * Para poder actualizar los valores en una sola llamada, se construyen
+	 * las querys de acuerdo con cuantas columnas se van a cambiar, con
+	 * ayuda de algunas cadenas auxiliares.
+	 */
 	char *columns = calloc(1024, sizeof(char) * 1024);
 	char *values = calloc(1024, sizeof(char) * 1024);
 	char temp[256];
@@ -153,6 +167,7 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 
 	if (strlen(argp->nombre) > 0)
 	{
+		// Se van anexando los valores a actualizar en las cadenas auxiliares.
 		strcat(columns, "nombre,");
 		snprintf(temp, 256, "'%s',", argp->nombre);
 		strcat(values, temp);
@@ -179,19 +194,21 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 		strcat(values, temp);
 	}
 
-	// Eliminar la última coma
+	// Elimina la última coma para formar la query
 	columns[strlen(columns) - 1] = '\0';
 	values[strlen(values) - 1] = '\0';
 
-	// construir el query con los campos necesarios
+	// Construye el query con los campos necesarios
 	buffer = sqlite3_mprintf("UPDATE alumnos SET (%s) = (%s) WHERE id=%d", columns, values, argp->id);
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 	sqlite3_step(stmt);
 
+	// Si no hubo errores, se completó la actualización con éxito.
 	result = TRUE;
 	printf("Student with id = %d updated. Columns changed: %s\n", argp->id, columns);
 	fflush(stdout);
 
+	// Libera las cadenas.
 	free(columns);
 	free(values);
 	sqlite3_finalize(stmt);
@@ -213,6 +230,8 @@ bool_t *eliminar_alumno_1_svc(int *argp, struct svc_req *rqstp)
 	const char *buffer = NULL;
 
 	sqlite3_open(DB_FILE, &db);
+
+	// Comprobación para verificar que el alumno exista.
 	buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE id = %d", *argp);
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 
@@ -224,6 +243,7 @@ bool_t *eliminar_alumno_1_svc(int *argp, struct svc_req *rqstp)
 		return &result;
 	}
 
+	// Eliminado del registro.
 	buffer = sqlite3_mprintf("DELETE FROM alumnos WHERE id = %d", *argp);
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 	sqlite3_step(stmt);

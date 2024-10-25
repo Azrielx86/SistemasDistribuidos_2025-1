@@ -15,6 +15,7 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 		exit(1);
 	}
 
+	// Comparación de todas las opciones posibles.
 	if (strcmp(action, "post") == 0)
 	{
 		const int *result_1 = registrar_alumno_1(alumno_arg, clnt);
@@ -74,11 +75,13 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 	else
 	{
 		printf("Unknown action: %s\n", action);
+		printf("Possible actions: [get, post, put, delete]\n");
 	}
 
 	clnt_destroy(clnt);
 }
 
+// ReSharper disable once CppParameterMayBeConst
 int main(int argc, char *argv[])
 {
 	int opt;
@@ -99,12 +102,20 @@ int main(int argc, char *argv[])
 	if (argc < 3)
 	{
 		printf("Usage: %s server_host action [options]\n", argv[0]);
+		printf("Options:\n");
+		printf("\t-i id -n first_name -a last_name -c course -e age\n");
+		printf("Actions:\n");
+		printf("\tget: [-n || -a || -c]\n");
+		printf("\tpost: [-n && -a && -c && -e]\n");
+		printf("\tput: -i && [-n &| -a &| -c &| -e]\n");
+		printf("\tdelete: -i\n");
 		exit(1);
 	}
 
 	char *host = argv[1];
 	char *action = argv[2];
 
+	// Se empareja cada opción dada con cada argumento que se puede enviar.
 	while ((opt = getopt(argc, argv, "n:a:e:i:c:")) != -1)
 	{
 		switch (opt)
