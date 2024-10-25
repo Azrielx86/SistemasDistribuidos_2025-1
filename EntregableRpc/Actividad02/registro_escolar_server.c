@@ -33,8 +33,7 @@ int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 	sqlite3_open(DB_FILE, &db); // Apertura del archivvo de base de datos
 	// Para construir la query se utiliza sqlite3_mprintf, similar a snprintf.
 	buffer = sqlite3_mprintf("INSERT INTO alumnos(nombre, apellido, edad, curso) VALUES('%s', '%s', %d, '%s');", argp->nombre, argp->apellido, argp->edad, argp->curso);
-	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL); // Preparación de la query
-	sqlite3_step(stmt);                              // Ejecución de la query
+	sqlite3_exec(db, buffer, NULL, NULL, NULL);
 
 	// Para mostrar qué id se insertó, se ejecuta esta query que recupera dicho ID.
 	sqlite3_prepare_v2(db, "SELECT last_insert_rowid()", -1, &stmt, NULL);
@@ -200,8 +199,7 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 
 	// Construye el query con los campos necesarios
 	buffer = sqlite3_mprintf("UPDATE alumnos SET (%s) = (%s) WHERE id=%d", columns, values, argp->id);
-	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
-	sqlite3_step(stmt);
+	sqlite3_exec(db, buffer, NULL, NULL, NULL); // Ejecución de la query
 
 	// Si no hubo errores, se completó la actualización con éxito.
 	result = TRUE;
@@ -245,8 +243,7 @@ bool_t *eliminar_alumno_1_svc(int *argp, struct svc_req *rqstp)
 
 	// Eliminado del registro.
 	buffer = sqlite3_mprintf("DELETE FROM alumnos WHERE id = %d", *argp);
-	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
-	sqlite3_step(stmt);
+	sqlite3_exec(db, buffer, NULL, NULL, NULL);
 
 	printf("Student with id %d removed.\n", *argp);
 

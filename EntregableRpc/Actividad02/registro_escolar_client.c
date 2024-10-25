@@ -52,6 +52,8 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 			clnt_destroy(clnt);
 			return;
 		}
+
+		printf("Student updated!\n");
 	}
 	else if (strcmp(action, "delete") == 0)
 	{
