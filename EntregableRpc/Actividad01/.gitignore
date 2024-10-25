@@ -1,0 +1,7 @@
+operaciones.h
+*.o
+*_clnt.*
+*_svc.*
+*_xdr.*
+operaciones_server
+operaciones_client
