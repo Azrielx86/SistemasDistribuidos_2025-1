@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+service Calculadora {
+    //Definir un método para RPC para sumar dos números
+    rpc Sumar(Numeros) returns (Resultado){}
+    rpc Restar(Numeros) returns (Resultado) {}
+    rpc Multiplicar(Numeros) returns (Resultado) {}
+    rpc Dividir(Numeros) returns  (Resultado) {}
+}
+
+message Numeros {
+    int32   num1  = 1;
+    int32   num2  = 2;
+}
+
+message Resultado {
+    int32 resultado = 1;
+}
