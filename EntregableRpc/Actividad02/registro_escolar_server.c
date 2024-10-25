@@ -1,4 +1,5 @@
 // ReSharper disable CppParameterNeverUsed
+// ReSharper disable CppParameterMayBeConstPtrOrRef
 #include "registro_escolar.h"
 #include "rpc/types.h"
 #include <sqlite3.h>
@@ -15,7 +16,7 @@
  */
 int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 {
-	static bool_t result;
+	static bool_t result = {0};
 
 	if (strlen(argp->nombre) < 0 || strlen(argp->apellido) < 0 || strlen(argp->curso) < 0 || argp->edad < 0)
 	{
@@ -40,7 +41,7 @@ int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 
 	argp->id = sqlite3_column_int(stmt, 0);
 
-	printf("Alumno registrado: [%d] %s %s %d", argp->id, argp->nombre, argp->apellido, argp->edad);
+	printf("Alumno registrado con id = %d | %s %s (%d) a %s\n", argp->id, argp->nombre, argp->apellido, argp->edad, argp->curso);
 	fflush(stdout);
 	sqlite3_finalize(stmt);
 	sqlite3_close(db);
@@ -54,26 +55,28 @@ int *registrar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
  * @param rqstp Request al server.
  * @return Alumno encontrado o NULL.
  */
-// ReSharper disable once CppParameterMayBeConstPtrOrRef
 alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 {
-	static alumno result;
-	memset(&result, 0, sizeof(alumno));
+	static alumno result = {0};
 	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
 
 	result.id = -1;
+	result.nombre = "";
+	result.apellido = "";
+	result.curso = "";
+	result.edad = -1;
 
 	sqlite3_open(DB_FILE, &db);
 
 	if (strlen(argp->nombre) > 0)
-		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE nombre='%q'", argp->nombre);
+		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE nombre LIKE '%q'", argp->nombre);
 	else if (strlen(argp->apellido) > 0)
-		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE apellido='%q'", argp->apellido);
+		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE apellido LIKE '%q'", argp->apellido);
 	else if (strlen(argp->curso) > 0)
 		buffer = sqlite3_mprintf("SELECT * FROM alumnos WHERE curso='%q'", argp->curso);
-	
+
 	// Solo buscará por el primer resultado que haga match.
 	sqlite3_prepare_v2(db, buffer, -1, &stmt, NULL);
 	while (sqlite3_step(stmt) != SQLITE_DONE)
@@ -82,23 +85,34 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
 
 		if (num_cols != 5)
 		{
-			result.id = -1;
-			result.nombre = "";
-			result.apellido = "";
-			result.curso = "";
-			result.edad = -1;
+			printf("No se encontró ningún alumno\n");
+			fflush(stdout);
+			sqlite3_finalize(stmt);
+			sqlite3_close(db);
 			return &result;
 		}
 
 		result.id = sqlite3_column_int(stmt, 0);
-		result.nombre = (char *) sqlite3_column_text(stmt, 1);
-		result.apellido = (char *) sqlite3_column_text(stmt, 2);
 		result.edad = sqlite3_column_int(stmt, 3);
-		result.curso = (char *) sqlite3_column_text(stmt, 4);
 
-		printf("Alumno encontrado con id=%d", result.id);
-		fflush(stdout);
-		return &result;
+		/* Para los casos de las cadenas, es necesario reservar memoria en los
+		 * apuntadores de la estructura alumno, en donde posteriormente se copian
+		 * las cadenas desde stmt, ya que estas se eliminarán al finalizar el stmt.
+		*/
+		const char* first_name = (char *) sqlite3_column_text(stmt, 1);
+		const char* last_name = (char *) sqlite3_column_text(stmt, 2);
+		const char* course = (char *) sqlite3_column_text(stmt, 4);
+
+		result.nombre = malloc(sizeof(char) * strlen(first_name) + 1);
+		result.apellido = malloc(sizeof(char) * strlen(last_name) + 1);
+		result.curso = malloc(sizeof(char) * strlen(course) + 1);
+		
+		strcpy(result.nombre, first_name);
+		strcpy(result.apellido, last_name);
+		strcpy(result.curso, course);
+
+		printf("Alumno encontrado con id=%d\n", result.id);
+		break;
 	}
 
 	fflush(stdout);
@@ -117,8 +131,7 @@ alumno *buscar_alumno_1_svc(busqueda *argp, struct svc_req *rqstp)
  */
 bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 {
-	static bool_t result;
-	memset(&result, 0, sizeof(bool_t));
+	static bool_t result = {0};
 	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;
@@ -181,6 +194,8 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
 
 	free(columns);
 	free(values);
+	sqlite3_finalize(stmt);
+	sqlite3_close(db);
 	return &result;
 }
 
@@ -190,10 +205,9 @@ bool_t *actualizar_alumno_1_svc(alumno *argp, struct svc_req *rqstp)
  * @param rqstp Request al servidor.
  * @return TRUE si se eliminó, FALSE en caso contrario.
  */
-// ReSharper disable once CppParameterMayBeConstPtrOrRef
 bool_t *eliminar_alumno_1_svc(int *argp, struct svc_req *rqstp)
 {
-	static bool_t result;
+	static bool_t result = FALSE;
 	sqlite3 *db;
 	sqlite3_stmt *stmt;
 	const char *buffer = NULL;

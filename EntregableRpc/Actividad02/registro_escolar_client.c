@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
 void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *busqueda_arg)
 {
 
@@ -20,6 +21,7 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 		if (result_1 == (bool_t *) NULL)
 		{
 			clnt_perror(clnt, "Error [post] cannot register student\n");
+			clnt_destroy(clnt);
 			return;
 		}
 
@@ -31,6 +33,7 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 		if (result_2 == (alumno *) NULL || result_2->id == -1)
 		{
 			printf("Cannot find any student.\n");
+			clnt_destroy(clnt);
 			return;
 		}
 
@@ -45,6 +48,7 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 		if (result_3 == (bool_t *) NULL)
 		{
 			clnt_perror(clnt, "call failed");
+			clnt_destroy(clnt);
 			return;
 		}
 	}
@@ -54,12 +58,14 @@ void registroalumnos_1(char *host, char *action, alumno *alumno_arg, busqueda *b
 		if (result_4 == (bool_t *) NULL)
 		{
 			clnt_perror(clnt, "call failed");
+			clnt_destroy(clnt);
 			return;
 		}
-		
+
 		if (*result_4 == FALSE)
 		{
 			printf("Cannot delete student, not found.\n");
+			clnt_destroy(clnt);
 			return;
 		}
 
@@ -109,6 +115,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':
 			alumno_arg.apellido = optarg;
+			busqueda_arg.apellido = optarg;
 			break;
 		case 'e':
 			alumno_arg.edad = atoi(optarg);
@@ -121,6 +128,7 @@ int main(int argc, char *argv[])
 			alumno_arg.curso = optarg;
 			busqueda_arg.curso = optarg;
 			break;
+		default:;
 		}
 	}
 

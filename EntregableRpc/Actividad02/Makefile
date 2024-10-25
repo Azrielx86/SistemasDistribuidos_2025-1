@@ -23,8 +23,8 @@ OBJECTS_SVC = $(SOURCES_SVC.c:%.c=%.o) $(TARGETS_SVC.c:%.c=%.o)
 # Compiler flags 
 
 INCLUDES += -I/usr/include/tirpc
-CFLAGS += -gfull -O0 $(INCLUDES)
-LDLIBS += -lnsl -ltirpc -lsqlite3
+CFLAGS += -gfull -O0 $(INCLUDES) -fsanitize=address
+LDLIBS += -lnsl -ltirpc -lsqlite3 -fsanitize=address
 RPCGENFLAGS = 
 
 # Targets 
