@@ -3,8 +3,6 @@
 
 # Parameters
 
-CC := clang
-
 CLIENT = registro_escolar_client
 SERVER = registro_escolar_server
 
